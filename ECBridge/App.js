@@ -41,10 +41,12 @@ function Login({ navigation }) {
       .then(response => response.json())
       .then(data => {
         store("token", data.token)
+        return true;
       })
-      .catch((error) => {
-        console.error('Error:', error);
-      });
+      // .catch((error) => {
+      //   console.error('Error:', error);
+      //   return false;
+      // });
   }
 
   function initSub() {
@@ -59,14 +61,10 @@ function Login({ navigation }) {
       store("PIN", PIN)
       store("Name", Name)
       store("PName", PName)
-      let token = login()
-      // if (login()) {
-      //   // stack navigate to data entry screen
-      //   navigation.push("Game", {PINZ: PIN})
-      //   console.log(PIN)
-      // }
-    }
-  }
+      login()
+      navigation.push("Menu")
+      console.log("Sucess")
+    }};
 
   return (
     <SafeAreaView style={styles.root}>
@@ -99,10 +97,24 @@ function Login({ navigation }) {
       </View>
     </SafeAreaView>
   );
+};
+
+function Menu({navigation}) {
+  return(
+    <View style={{alignItems: 'center', paddingTop: 20}}>
+      <Pressable style={styles.button} onPress={navigation.push("Game", {PINZ: "5555"})}>
+        <Text style={{textAlign: 'center', fontSize: 20}}>Game</Text>
+      </Pressable>
+    </View>
+  )
 }
 
-function Game({navication, route}) {
-  const [selected, setSelected] = React.useState(false);
+function Game({navigation, route}) {
+  const [cselected, csetSelected] = React.useState(false);
+  const [dselected, dsetSelected] = React.useState(false);
+  const [hselected, hsetSelected] = React.useState(false);
+  const [sselected, ssetSelected] = React.useState(false);
+  const [ntselected, ntsetSelected] = React.useState(false);
   const gameStyles = StyleSheet.create({
     iden: {
       backgroundColor: 'slategrey',
@@ -115,7 +127,7 @@ function Game({navication, route}) {
     },
     gridElem: {
       padding: 20,
-      backgroundColor: selected ? "red" : "transparent",
+      // backgroundColor: selected ? "red" : "transparent",
     }
   })
   return(
@@ -126,17 +138,17 @@ function Game({navication, route}) {
     </View>
     <View style={gameStyles.sGrid}>
 
-      {/* scrap this, just slap down a text box input with instructions, and a few text boxes with some validation.
+      {/* scrap this, just pickers.
       then I'll add a submit button, and the relevant code. After that, all thats left is to handle the traveler implementation. And the server. */}
-      <Pressable onPress={() => setSelected(!selected)} style={gameStyles.gridElem}><Text style={{fontSize: 50}}>♣️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: selected ? "red" : "transparent",}}>♦️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: selected ? "red" : "transparent",}}>♥️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: selected ? "red" : "transparent",}}>♠️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 41.5, backgroundColor: selected ? "red" : "transparent",}}>NT</Text></Pressable>
+      <Pressable onPress={() => csetSelected(!cselected)} style={gameStyles.gridElem}><Text style={{fontSize: 50}}>♣️</Text></Pressable>
+      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: dselected ? "red" : "transparent",}}>♦️</Text></Pressable>
+      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: hselected ? "red" : "transparent",}}>♥️</Text></Pressable>
+      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: cselected ? "red" : "transparent",}}>♠️</Text></Pressable>
+      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 41.5, backgroundColor: ntselected ? "red" : "transparent",}}>NT</Text></Pressable>
     </View>
     </View>
   )
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -176,6 +188,7 @@ function MyStack() {
     <Stack.Navigator>
       <Stack.Screen name="Home" component={Login} />
       <Stack.Screen name="Game" component={Game} />
+      <Stack.Screen name="Menu" component={Menu} />
     </Stack.Navigator>
   );
 }
