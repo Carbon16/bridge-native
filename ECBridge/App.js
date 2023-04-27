@@ -4,9 +4,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import 'react-native-gesture-handler';
+import * as Haptics from 'expo-haptics';
+import {Picker} from '@react-native-picker/picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { BlurView } from 'expo-blur';
+import * as Updates from 'expo-updates';
 
-const Stack = createStackNavigator();
+
+const GameScreens = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+import * as Sentry from "@sentry/react-native";
+
+// Sentry.init({
+//   dsn: "https://a330883a5bd441eba480adf1684ff034@o4504266723688448.ingest.sentry.io/4505070143668224",
+//   // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+//   // We recommend adjusting this value in production.
+//   tracesSampleRate: 1.0,
+//   enableInExpoDevelopment: true,
+//   enableNative: true,
+// });
 
 async function store(key, value) {
   try {
@@ -26,17 +44,17 @@ async function getStore(key) {
   }
 }
 
-
 function Login({ navigation }) {
   const [PIN, onChangePIN] = React.useState('');
   const [Name, onChangeName] = React.useState('');
   const [PName, onChangePName] = React.useState('');
+  const [IP, onChangeIP] = React.useState('');
 
-  async function login() {
+  async function login(ip) {
     //fetch localhost:3000/skel/login
     //if 401, return false
     //if 200, return true
-    await fetch(`http://192.168.0.43:3000/login/${PIN}/${Name}/${PName}`)
+    await fetch(`http://${ip}:3000/login/${PIN}/${Name}/${PName}`)
     //parse string response
       .then(response => response.json())
       .then(data => {
@@ -53,17 +71,20 @@ function Login({ navigation }) {
     if (PIN == '') {
       Alert.alert("You must enter your pair number! [0001]")
     } if (Name =='') {
-      Alert.alert("You must enter your name! [0002]")
+      Alert.alert("You must enter your name! [0001]")
     } if (PName =='') {
-      Alert.alert("You must enter your partner's name! [0002]")
+      Alert.alert("You must enter your partner's name! [0001]")
+    } if (IP == '') {
+      Alert.alert("You must enter an IP address! [0001]")
     } else {
       Alert.alert(PIN)
       store("PIN", PIN)
       store("Name", Name)
       store("PName", PName)
-      login()
-      navigation.push("Menu")
+      // login()
       console.log("Sucess")
+      // navigate to game screen
+      navigation.navigate("Game", { screen: 'Entry', params: {PINZ: 5555} })
     }};
 
   return (
@@ -76,6 +97,13 @@ function Login({ navigation }) {
         style={styles.input}
         onChangeText={onChangePIN}
         value={PIN}
+        keyboardType="numeric"
+      />
+      <Text style={styles.t}>Please enter the server IP:</Text>
+      <TextInput
+        style={styles.input}
+        onChangeText={onChangeIP}
+        value={IP}
         keyboardType="numeric"
       />
       <Text style={styles.t}>Please enter your name:</Text>
@@ -99,22 +127,20 @@ function Login({ navigation }) {
   );
 };
 
-function Menu({navigation}) {
+function Menu({avigation}) {
   return(
     <View style={{alignItems: 'center', paddingTop: 20}}>
-      <Pressable style={styles.button} onPress={navigation.push("Game", {PINZ: "5555"})}>
+      <Pressable style={styles.button} onPress={Navigation.push("Score", {PINZ: "5555"})}>
         <Text style={{textAlign: 'center', fontSize: 20}}>Game</Text>
       </Pressable>
     </View>
   )
 }
 
-function Game({navigation, route}) {
-  const [cselected, csetSelected] = React.useState(false);
-  const [dselected, dsetSelected] = React.useState(false);
-  const [hselected, hsetSelected] = React.useState(false);
-  const [sselected, ssetSelected] = React.useState(false);
-  const [ntselected, ntsetSelected] = React.useState(false);
+function Score({navigation, route}) {
+  const [selectedSuit, setSelectedSuit] = React.useState();
+  const [selectedBid, setSelectedBid] = React.useState();
+  const [selectedMade, setSelectedMade] = React.useState();
   const gameStyles = StyleSheet.create({
     iden: {
       backgroundColor: 'slategrey',
@@ -136,27 +162,37 @@ function Game({navigation, route}) {
       <Text style={{fontSize: 28, color: 'blue', paddingTop: 10, paddingRight: 60}}>Pair Number: {route.params.PINZ}</Text>
       <Pressable><Ionicons name={"add-circle-outline"} size={50} color={'lime'}/></Pressable>
     </View>
-    <View style={gameStyles.sGrid}>
-
-      {/* scrap this, just pickers.
-      then I'll add a submit button, and the relevant code. After that, all thats left is to handle the traveler implementation. And the server. */}
-      <Pressable onPress={() => csetSelected(!cselected)} style={gameStyles.gridElem}><Text style={{fontSize: 50}}>♣️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: dselected ? "red" : "transparent",}}>♦️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: hselected ? "red" : "transparent",}}>♥️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 50, backgroundColor: cselected ? "red" : "transparent",}}>♠️</Text></Pressable>
-      <Pressable style={gameStyles.gridElem}><Text style={{fontSize: 41.5, backgroundColor: ntselected ? "red" : "transparent",}}>NT</Text></Pressable>
+    <View>
+    <Picker
+      selectedValue={selectedSuit}
+      itemStyle={{fontSize: 50}}
+      selectionColor="green"
+      onValueChange={(itemValue, itemIndex) => {
+        setSelectedSuit(itemValue)
+        // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      }}>
+      <Picker.Item color="green" label="♣️" value="C" />
+      <Picker.Item label="♥️" value="H" />
+      <Picker.Item label="♦️" value="D" />
+      <Picker.Item label="♠️" value="S" />
+      <Picker.Item label="NT" value="NT" />
+    </Picker>
     </View>
     </View>
   )
 };
+
+function enterGame({navigation, route}) {
+  parseErrorStack;
+}
 
 const styles = StyleSheet.create({
   container: {
     // backgroundColor: 'slategray',
     alignItems: 'center',
     fontSize: 30,
-    paddingBottom: 100,
-    paddingTop: 20,
+    paddingBottom: 50,
+    paddingTop: 0,
     textAlight: 'center',
   },
   input: { 
@@ -183,21 +219,50 @@ const styles = StyleSheet.create({
   }
 });
 
-function MyStack() {
+function GameStack() {
   return (
-    <Stack.Navigator>
-      <Stack.Screen name="Home" component={Login} />
-      <Stack.Screen name="Game" component={Game} />
-      <Stack.Screen name="Menu" component={Menu} />
-    </Stack.Navigator>
+    <GameScreens.Navigator screenOptions={{
+      headerShown: false,
+    }}>
+      <GameScreens.Screen name="Home" component={Login} />
+      <GameScreens.Screen name="Entry" component={Score} />
+      <GameScreens.Screen name="Menu" component={Menu} />
+    </GameScreens.Navigator>
   );
 }
 
+function MainStack({route}) {
+  return(
+    <NavigationContainer independent={true}>
+      <Tab.Navigator   screenOptions={{
+        tabBarStyle: { position: 'absolute' },
+        headerShown: false,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName = 'ios-list'
+          // You can return any component that you like here!
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: 'lime',
+        tabBarInactiveTintColor: 'gray',
+      }}>
+        <Tab.Screen name="Game" component={GameStack} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  )
+}
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <MyStack />
+    <NavigationContainer independent={true}>
+      <MainStack/>
     </NavigationContainer>
   );
-}
+};
+
+// export default Sentry.wrap(function App() {
+//   return (
+//     <NavigationContainer>
+//       <MyStack/>
+//     </NavigationContainer>
+//   );
+// });
