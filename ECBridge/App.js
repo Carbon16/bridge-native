@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View, TextInput, SafeAreaView, Pressable, Alert } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, SafeAreaView, Pressable, Alert, Modal, KeyboardAvoidingView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -8,8 +9,6 @@ import * as Haptics from 'expo-haptics';
 import {Picker} from '@react-native-picker/picker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { BlurView } from 'expo-blur';
-import * as Updates from 'expo-updates';
 
 
 const GameScreens = createStackNavigator();
@@ -17,14 +16,14 @@ const Tab = createBottomTabNavigator();
 
 import * as Sentry from "@sentry/react-native";
 
-// Sentry.init({
-//   dsn: "https://a330883a5bd441eba480adf1684ff034@o4504266723688448.ingest.sentry.io/4505070143668224",
-//   // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
-//   // We recommend adjusting this value in production.
-//   tracesSampleRate: 1.0,
-//   enableInExpoDevelopment: true,
-//   enableNative: true,
-// });
+Sentry.init({
+  dsn: "https://a330883a5bd441eba480adf1684ff034@o4504266723688448.ingest.sentry.io/4505070143668224",
+  // Set tracesSampleRate to 1.0 to capture 100% of transactions for performance monitoring.
+  // We recommend adjusting this value in production.
+  tracesSampleRate: 1.0,
+  enableInExpoDevelopment: false,
+  enableNative: false,
+});
 
 async function store(key, value) {
   try {
@@ -44,28 +43,43 @@ async function getStore(key) {
   }
 }
 
-function Login({ navigation }) {
+function Login({navigation}) {
+  return(
+    <View>
+      <Text>Hello</Text>
+    </View>
+  )
+}
+
+function Register({ navigation }) {
   const [PIN, onChangePIN] = React.useState('');
   const [Name, onChangeName] = React.useState('');
   const [PName, onChangePName] = React.useState('');
   const [IP, onChangeIP] = React.useState('');
+  const [isVisible, onChangeVis] = React.useState()
+
+  function check() {
+    if (getStore("reg") !== true) {
+      onChangeVis(true);
+    }
+  };
+
+  function checkLogin(){
+    navigation.navigate("Game", { screen: 'Login' })
+  }
 
   async function login(ip) {
-    //fetch localhost:3000/skel/login
-    //if 401, return false
-    //if 200, return true
     await fetch(`http://${ip}:3000/login/${PIN}/${Name}/${PName}`)
     //parse string response
       .then(response => response.json())
       .then(data => {
         store("token", data.token)
-        return true;
+        console.log(data)
+        return data;
       })
-      // .catch((error) => {
-      //   console.error('Error:', error);
-      //   return false;
-      // });
   }
+
+  
 
   function initSub() {
     if (PIN == '') {
@@ -81,12 +95,14 @@ function Login({ navigation }) {
       store("PIN", PIN)
       store("Name", Name)
       store("PName", PName)
-      // login()
-      console.log("Sucess")
-      // navigate to game screen
+      try {
+        const cred = login()
+      } catch(error) {
+        Alert.alert(error)
+      };
       navigation.navigate("Game", { screen: 'Entry', params: {PINZ: 5555} })
-    }};
-
+     }
+  };
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.container}>
@@ -127,7 +143,7 @@ function Login({ navigation }) {
   );
 };
 
-function Menu({avigation}) {
+function Menu({navigation}) {
   return(
     <View style={{alignItems: 'center', paddingTop: 20}}>
       <Pressable style={styles.button} onPress={Navigation.push("Score", {PINZ: "5555"})}>
@@ -137,9 +153,15 @@ function Menu({avigation}) {
   )
 }
 
+//Score entry
+
+function pairandBoard({navigation, route}) {
+  pass
+};
+
 function Score({navigation, route}) {
   const [selectedSuit, setSelectedSuit] = React.useState();
-  const [selectedBid, setSelectedBid] = React.useState();
+  const [selectedBid, setSelectedBid] = React.useState(0);
   const [selectedMade, setSelectedMade] = React.useState();
   const gameStyles = StyleSheet.create({
     iden: {
@@ -156,35 +178,52 @@ function Score({navigation, route}) {
       // backgroundColor: selected ? "red" : "transparent",
     }
   })
+
   return(
     <View>
     <View style={gameStyles.iden}>
       <Text style={{fontSize: 28, color: 'blue', paddingTop: 10, paddingRight: 60}}>Pair Number: {route.params.PINZ}</Text>
-      <Pressable><Ionicons name={"add-circle-outline"} size={50} color={'lime'}/></Pressable>
+      <Pressable ><Ionicons name={"caret-forward-circle-outline"} size={50} color={'lime'}/></Pressable>
     </View>
     <View>
+    <Text sytle={styles.entryLabel}>Please enter the suit:</Text>
     <Picker
       selectedValue={selectedSuit}
-      itemStyle={{fontSize: 50}}
+      itemStyle={{fontSize: 45}}
       selectionColor="green"
       onValueChange={(itemValue, itemIndex) => {
         setSelectedSuit(itemValue)
         // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       }}>
-      <Picker.Item color="green" label="♣️" value="C" />
-      <Picker.Item label="♥️" value="H" />
-      <Picker.Item label="♦️" value="D" />
-      <Picker.Item label="♠️" value="S" />
-      <Picker.Item label="NT" value="NT" />
+      <Picker.Item color="green" label="♣️" value="1" />
+      <Picker.Item label="♥️" value="2" />
+      <Picker.Item label="♦️" value="3" />
+      <Picker.Item label="♠️" value="4" />
+      <Picker.Item label="NT" value="0" />
     </Picker>
+    <Text sytle={styles.entryLabel}>Please enter the bid:</Text>
+    <Picker
+      selectedValue={selectedBid}
+      itemStyle={{fontSize: 45}}
+      onValueChange={(itemValue, itemIndex) => {
+        setSelectedBid(itemValue)
+        // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      }}>
+      <Picker.Item label="1" value="1" />
+      <Picker.Item label="2" value="2" />
+      <Picker.Item label="3" value="3" />
+      <Picker.Item label="4" value="4" />
+      <Picker.Item label="5" value="5" />
+      <Picker.Item label="6" value="6" />
+      <Picker.Item label="7" value="7" />
+    </Picker>
+    <Text style={styles.entryLabel}>{parseInt(selectedBid) + 6} to make</Text>
     </View>
     </View>
   )
 };
 
-function enterGame({navigation, route}) {
-  parseErrorStack;
-}
+//Styles
 
 const styles = StyleSheet.create({
   container: {
@@ -194,6 +233,10 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
     paddingTop: 0,
     textAlight: 'center',
+  },
+  entryLabel: {
+    fontSize: 20,
+
   },
   input: { 
     height: 40,
@@ -219,19 +262,22 @@ const styles = StyleSheet.create({
   }
 });
 
+//STACKS
+
 function GameStack() {
   return (
     <GameScreens.Navigator screenOptions={{
       headerShown: false,
     }}>
-      <GameScreens.Screen name="Home" component={Login} />
+      <GameScreens.Screen name="Home" component={Register} />
       <GameScreens.Screen name="Entry" component={Score} />
       <GameScreens.Screen name="Menu" component={Menu} />
+      <GameScreens.Screen name="Login" component={Login} />
     </GameScreens.Navigator>
   );
 }
 
-function MainStack({route}) {
+function MainStack() {
   return(
     <NavigationContainer independent={true}>
       <Tab.Navigator   screenOptions={{
@@ -251,18 +297,10 @@ function MainStack({route}) {
   )
 }
 
-export default function App() {
+export default Sentry.wrap(function App() {
   return (
     <NavigationContainer independent={true}>
       <MainStack/>
     </NavigationContainer>
   );
-};
-
-// export default Sentry.wrap(function App() {
-//   return (
-//     <NavigationContainer>
-//       <MyStack/>
-//     </NavigationContainer>
-//   );
-// });
+});
