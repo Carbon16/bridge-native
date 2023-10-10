@@ -14,7 +14,6 @@ const GameScreens = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 import * as Sentry from "@sentry/react-native";
-import { onChange } from 'react-native-reanimated';
 
 Sentry.init({
   dsn: "https://a330883a5bd441eba480adf1684ff034@o4504266723688448.ingest.sentry.io/4505070143668224",
@@ -74,14 +73,14 @@ function Register({ navigation }) {
 
   async function login() {
     try {
-      //fetch from server, and return the id in the response
-        fetch(`http://172.16.168.241:3000/login/${Name}/${PName}`, {
+        fetch(`http://172.16.171.86:3000/login/${Name}/${PName}`, {
           method: "POST",
         })
         .then(res => res.json())
         .then(res => {
-          store("ID", res)
-          console.log(res)
+          ress = JSON.stringify(res)
+          store("ID", ress)
+          console.log(ress)
           return res
         })
     } catch(error) {
@@ -97,10 +96,10 @@ function Register({ navigation }) {
     } if (IP == '') {
       Alert.alert("You must enter an IP address! [0001]")
     } else {
-      var id = login()
-      Alert.alert(id)
+      Alert.alert("Pass1")
+      var id = await login()
       navigation.navigate('Game', {
-        screen: 'Entry',
+        screen: 'Identify',
         params: { ID: id },
       });
     }};
@@ -324,7 +323,7 @@ function Ident({navigation}) {
     />
     <View style={{alignItems: 'center', paddingTop: 20}}>
       <Pressable style={styles.button} onPress={startFlow}>
-        <Text style={{textAlign: 'center', fontSize: 20}}>Connect</Text>
+        <Text style={{textAlign: 'center', fontSize: 20}}>Continue</Text>
       </Pressable>
     </View>
   </SafeAreaView>
@@ -488,10 +487,10 @@ function MainStack() {
   )
 }
 
-export default Sentry.wrap(function App() {
+export default function App() {
   return (
     <NavigationContainer independent={true}>
       <MainStack/>
     </NavigationContainer>
   );
-});
+};
