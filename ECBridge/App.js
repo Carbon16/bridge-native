@@ -1,23 +1,26 @@
 import React from 'react';
 import { useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, SafeAreaView, Pressable, Alert, Modal, KeyboardAvoidingView, Switch } from 'react-native';
+import { StyleSheet, Text, View, TextInput, SafeAreaView, Pressable, Alert, Modal, KeyboardAvoidingView, Switch, ScrollView, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
 import {Picker} from '@react-native-picker/picker';
-import Ionicons from 'react-native-vector-icons/Ionicons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 
 const GameScreens = createStackNavigator();
 const Tab = createBottomTabNavigator();
-
+const LeaderScreens = createStackNavigator();
 import * as Sentry from "@sentry/react-native";
+
+payload = {}
+const bidHTML = require('./assets/html/bid.html')
 
 Sentry.init({
   dsn: "https://a330883a5bd441eba480adf1684ff034@o4504266723688448.ingest.sentry.io/4505070143668224",
-
   tracesSampleRate: 1.0,
   enableInExpoDevelopment: false,
   enableNative: false,
@@ -26,6 +29,7 @@ Sentry.init({
 async function store(key, value) {
   try {
     await AsyncStorage.setItem(key, value)
+    payload[key] = value
   } catch (e) {
     Alert.alert("Storage error! [0003]")
   }
@@ -41,22 +45,9 @@ async function getStore(key) {
   }
 }
 
-function Login({navigation}) {
-  return(
-    <View>
-      <Text>Hello</Text>
-    </View>
-  )
+function Login() {
+  return;
 }
-
-function Entry({ navigation }) {
-  //on load fetch sked
-  return (
-    <SafeAreaView style={styles.root}>
-
-    </SafeAreaView>
-  );
-};
 
 function Register({ navigation }) {
   const [PIN, onChangePIN] = React.useState('');
@@ -73,7 +64,7 @@ function Register({ navigation }) {
 
   async function login() {
     try {
-        fetch(`http://172.16.171.86:3000/login/${Name}/${PName}`, {
+        fetch(`http://172.20.10.4:3000/login/${Name}/${PName}`, {
           method: "POST",
         })
         .then(res => res.json())
@@ -96,7 +87,6 @@ function Register({ navigation }) {
     } if (IP == '') {
       Alert.alert("You must enter an IP address! [0001]")
     } else {
-      Alert.alert("Pass1")
       var id = await login()
       navigation.navigate('Game', {
         screen: 'Identify',
@@ -136,6 +126,92 @@ function Register({ navigation }) {
   );
 };
 
+function Confirm({navigation}) {
+  const [bid, onChangeBid] = React.useState('');
+  const [lead, onChangeLead] = React.useState('');
+  // const [opp, onChangeOpp] = React.useState('');
+  const [suit, onChangeSuit] = React.useState('');
+  const [dub, onChangeDub] = React.useState('');
+  const [id, onChangeID] = React.useState('');
+  const [Deck, onChangeDeck] = React.useState('');
+  const [Table, onChangeTable] = React.useState('');
+  const [oppID, onChangeOppID] = React.useState('');
+  const [res, onChangeRes] = React.useState('');
+  const [Dec, onChangeDEC] = React.useState('');
+
+  async function confirm(){
+    try {
+      console.log(`http://172.20.10.4:3000/record/${id}/${suit}/${bid}/${res}/${Table}/${Deck}/${oppID}/${dub}/${Dec}/${lead}`)
+      fetch(`http://172.20.10.4:3000/record/${id}/${suit}/${bid}/${res}/${Table}/${Deck}/${oppID}/${dub}/${Dec}/${lead}`, {
+        method: "POST",
+      })
+      .then(res => res.json())
+      .then(res => {
+        Alert.alert('You scored:', JSON.stringify(res))
+        navigation.navigate('Game', {screen: 'Identify'})
+      })
+    } catch(e) {
+      console.log(e)
+    }
+  }
+
+  let payload = {}
+  useEffect(() => {
+    async function update() {
+    try {
+      onChangeBid(await AsyncStorage.getItem('bid'));
+      onChangeLead(await AsyncStorage.getItem('lead'));
+      //onChangeOpp(await AsyncStorage.getItem('opp'));
+      onChangeSuit(await AsyncStorage.getItem('suit'));
+      onChangeDub(await AsyncStorage.getItem('dub'));
+      onChangeID(await AsyncStorage.getItem('ID'));
+      onChangeDeck(await AsyncStorage.getItem('deck'));
+      onChangeTable(await AsyncStorage.getItem('table'));
+      onChangeOppID(await AsyncStorage.getItem('oppID'));
+      onChangeRes(await AsyncStorage.getItem('res'));
+      onChangeDEC(await AsyncStorage.getItem('decl'));
+    } catch(e) {
+      // read error
+      console.log(e);
+  }}
+  update()
+}, [bid, lead, oppID, suit, dub, id, Deck, Table, res, Dec]);
+
+  return(
+    <SafeAreaView>
+      <Text style={styles.title}>You have entered:</Text>
+    <View style={styles.container2}>
+    <View style={styles.row}>
+      <Text style={styles.label}>Lead:</Text>
+      <Text style={styles.value}>{lead}</Text>
+    </View>
+    <View style={styles.row}>
+      <Text style={styles.label}>Opponent:</Text>
+      <Text style={styles.value}>{oppID}</Text>
+    </View>
+    <View style={styles.row}>
+      <Text style={styles.label}>Suit:</Text>
+      <Text style={styles.value}>{suit}</Text>
+    </View>
+    <View style={styles.row}>
+      <Text style={styles.label}>Bid:</Text>
+      <Text style={styles.value}>{bid}</Text>
+    </View>
+    <View style={styles.row}>
+      <Text style={styles.label}>Doubled:</Text>
+      <Text style={styles.value}>{dub}</Text>
+    </View>
+    <Text style={styles.confirmation}>N/S, please confirm the above details</Text>
+    <View style={{alignItems: 'center', paddingTop: 20}}>
+      <Pressable onPress={confirm} style={styles.button} >
+        <Text style={{textAlign: 'center', fontSize: 20}}>Confirm</Text>
+      </Pressable>
+    </View>
+    </View>
+  </SafeAreaView>
+  );
+};
+
 function Menu({navigation}) {
   return(
     <View style={{alignItems: 'center', paddingTop: 20}}>
@@ -149,42 +225,89 @@ function Menu({navigation}) {
 //Score entry
 
 function Decl({navigation, route}) {
-  const [Dec, onChangeDEC] = React.useState(' ');
-  const [Deck, onChangeDeck] = React.useState('');
-  const [Opp, onChangeOpp] = React.useState('')
-  function updateSt(val){
-    onChangeDEC(val)
-    Haptics.NotificationFeedbackType.Success
+  const [Dec, onChangeDEC] = React.useState('N');
+  const [Lead, onChangeLead] = React.useState('');
+  const [Res, onChangeRes] = React.useState('0');
+
+  function submit() {
+    if (Dec == ' ') {
+      Alert.alert("You must enter the declarer! [0002]")
+    } if (Lead == '') {
+      Alert.alert("You must enter the lead! [0002]")
+    } else {
+      store("decl", Dec)
+      store("lead", Lead)
+      store("res", Res)
+      navigation.navigate('Game', {screen: 'Confirm'})
+    }
   }
   return(
     <SafeAreaView >
-      <Text style={{fontSize: 45, justifyContent: 'center', transform: [{translateX: 50}]}}>Enter Declarer</Text>
-      <View style={{position: 'absolute'}}>
-        <Pressable onPress={() => updateSt('N')} style={[styles.trapezoid, {transform: [{rotate: '180deg'}, {translateY: -100}, {translateX: -95}]}]}></ Pressable>
-        <Pressable onPress={() => updateSt('W')} style={[styles.trapezoid, {transform: [{rotate: '90deg'}, {translateY: 5}, {translateX: 100}]}]}></ Pressable>
-        <Pressable onPress={() => updateSt('E')} style={[styles.trapezoid, {transform: [{rotate: '270deg'}, {translateY: 195}, {translateX: 0}]}]}></ Pressable>
-        <Pressable onPress={() => updateSt('S')} style={[styles.trapezoid, {transform: [{rotate: '0deg'}, {translateY: 0}, {translateX: 95}]}]}></ Pressable>
-        <Text style={{fontSize: 50, color: 'black', transform: [{translateY: -180}, {translateX: 174}]}}>{Dec}</Text>
-        <Text style={{fontSize: 50, color: 'black', transform: [{translateY: -340}, {translateX: 174}]}}>N</Text>
-        <Text style={{fontSize: 50, color: 'black', transform: [{translateY: -300}, {translateX: 270}]}}>E</Text>
-        <Text style={{fontSize: 50, color: 'black', transform: [{translateY: -260}, {translateX: 174}]}}>S</Text>
-        <Text style={{fontSize: 50, color: 'black', transform: [{translateY: -420}, {translateX: 74}]}}>W</Text>
+      <View style={styles.container}>
+        <Text style={styles.head}>Welcome to ECBridge</Text>
       </View>
-      <View style={{paddingTop: 350, paddingLeft: 20}}>
-        <Text sytle={styles.entryLabel}>Please enter the opposing pair's number:</Text>
+      <View>
+        <Picker
+        selectedValue={Dec}
+        itemStyle={{fontSize: 45}}
+        selectionColor="green"
+        style={{width: '100%'}}
+        onValueChange={(itemValue, itemIndex) => {
+          onChangeDEC(itemValue)
+          // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        }}>
+          <Picker.Item label="N" value="N" />
+          <Picker.Item label="E" value="E" />
+          <Picker.Item label="S" value="S" />
+          <Picker.Item label="W" value="W" />
+        </Picker>
+      </View>
+      <View style={{paddingTop: 20}}>
+        <Text sytle={styles.entryLabel}>Please enter the lead:</Text>
         <TextInput
           style={styles.input}
-          onChangeText={onChangeOpp}
-          value={Opp}
-          keyboardType="numeric"
+          onChangeText={onChangeLead}
+          value={Lead}
+          placeholder='eg 1H or AS'
         />
-        <Text sytle={styles.entryLabel}>Please enter the deck number:</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={onChangeDeck}
-          value={Deck}
-          keyboardType="numeric"
-        />
+        {/* center pressable */}
+        <View>
+        <Picker
+        selectedValue={Res}
+        itemStyle={{fontSize: 45}}
+        selectionColor="green"
+        style={{width: 355}}
+        onValueChange={(itemValue, itemIndex) => {
+          onChangeRes(itemValue)
+          // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        }}>
+          <Picker.Item label="-13" value="-13" />
+          <Picker.Item label="-12" value="-12" />
+          <Picker.Item label="-11" value="-11" />
+          <Picker.Item label="-10" value="-10" />
+          <Picker.Item label="-9" value="-9" />
+          <Picker.Item label="-8" value="-8" />
+          <Picker.Item label="-7" value="-7" />
+          <Picker.Item label="-6" value="-6" />
+          <Picker.Item label="-5" value="-5" />
+          <Picker.Item label="-4" value="-4" />
+          <Picker.Item label="-3" value="-3" />
+          <Picker.Item label="-2" value="-2" />
+          <Picker.Item label="-1" value="-1" />
+          <Picker.Item label="=" value="0" />
+          <Picker.Item label="+1" value="1" />
+          <Picker.Item label="+2" value="2" />
+          <Picker.Item label="+3" value="3" />
+          <Picker.Item label="+4" value="4" />
+          <Picker.Item label="+5" value="5" />
+          <Picker.Item label="+6" value="6" />
+        </Picker>
+      </View>
+        <View style={{justifyContent: 'center', alignItems: 'center' }}>
+        <Pressable onPress={submit} style={{padding: 20, backgroundColor: 'grey', width: 100, borderRadius: 15}}>
+          <Text>Confirm</Text>
+        </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -258,7 +381,6 @@ function Vuner({navigation}) {
         selectedValue={DubVal}
         itemStyle={{fontSize: 45}}
         selectionColor="green"
-        style={{width: 355}}
         onValueChange={(itemValue, itemIndex) => {
           setDubVal(itemValue)
           // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -283,16 +405,22 @@ function Ident({navigation}) {
   const [Table, onChangeTable] = React.useState();
   const [Deck, onChangeDeck] = React.useState();
 
-  function startFlow(oppId, Table, Deck){
-    var id = getStore("ID")
+  async function startFlow(){
+    var id = await getStore("ID")
     // create an alert with the status code response
-    fetch(`http://172.16.168.241:3000/validate/${Deck}/${Table}/${id}/${oppID}/`, {
+    console.log(Deck)
+    console.log(`http://172.20.10.4:3000/validate/${Deck}/${Table}/${id}/${oppID}/`)
+    fetch(`http://172.20.10.4:3000/validate/${Deck}/${Table}/${id}/${oppID}/`, {
           method: "POST",
         })
-        .then(res => res.json())
-        .then(res => {
-          console.log(res)
-          return res
+        .then((res) => {
+          console.log(res.status)
+          if (res.status == 202) {
+            store("deck", Deck)
+            store("table", Table)
+            store("oppID", oppID)
+            navigation.navigate('Game', {screen: 'Entry'})
+          }
         })
   }
   return(
@@ -322,7 +450,7 @@ function Ident({navigation}) {
       keyboardType="numeric"
     />
     <View style={{alignItems: 'center', paddingTop: 20}}>
-      <Pressable style={styles.button} onPress={startFlow}>
+      <Pressable style={styles.button} onPress={startFlow()}>
         <Text style={{textAlign: 'center', fontSize: 20}}>Continue</Text>
       </Pressable>
     </View>
@@ -334,6 +462,7 @@ function Score({navigation, route}) {
   const [selectedSuit, setSelectedSuit] = React.useState();
   const [selectedBid, setSelectedBid] = React.useState(0);
   const [selectedMade, setSelectedMade] = React.useState();
+  const [DubVal, setDubVal] = React.useState()
   const gameStyles = StyleSheet.create({
     iden: {
       backgroundColor: 'slategrey',
@@ -352,8 +481,11 @@ function Score({navigation, route}) {
     }
   })
 
-  function goto(){
-    navigation.navigate('Game', {screen: 'Finalise', params: {suit: `${selectedSuit}`, bid: `${selectedBid}`}})
+  async function goto(){
+    store("suit", selectedSuit)
+    store("bid", selectedBid)
+    store("dub", DubVal)
+    navigation.navigate('Game', {screen: 'Declarer'})
   }
   return(
     <View>
@@ -394,6 +526,20 @@ function Score({navigation, route}) {
       <Picker.Item label="7" value="7" />
     </Picker>
     <Text style={styles.entryLabel}>{parseInt(selectedBid) + 6} to make</Text>
+    <Picker
+        selectedValue={DubVal}
+        itemStyle={{fontSize: 45}}
+        selectionColor="green"
+        style={{width: 355}}
+        onValueChange={(itemValue, itemIndex) => {
+          setDubVal(itemValue)
+          // Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+        }}>
+          <Picker.Item label="I" value="0" />
+          <Picker.Item label="X" value="1" />
+          <Picker.Item label="XX" value="2" />
+        </Picker>
+        <Text>Please enter the doubled value</Text>
     </View>
     </View>
   )
@@ -410,6 +556,25 @@ const styles = StyleSheet.create({
     paddingTop: 0,
     textAlight: 'center',
   },
+  container2: {
+    padding: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  label: {
+    fontWeight: 'bold',
+    marginRight: 10,
+  },
+  value: {
+    flex: 1,
+  },
+  confirmation: {
+    marginTop: 20,
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   entryLabel: {
     fontSize: 20,
 
@@ -420,9 +585,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 100,
     borderBottomColor: "#af4cab",
     borderLeftWidth: 50,
-    borderLeftColor: "transparent",
+    borderLeftColor: "solid",
     borderRightWidth: 50,
-    borderRightColor: "transparent",
+    borderRightColor: "solid",
     borderStyle: "solid",
   },
   input: { 
@@ -446,7 +611,24 @@ const styles = StyleSheet.create({
   },
   t: {
     paddingLeft: 10,
-  }
+  },
+  title: {
+    fontSize: 20,
+    textAlign: 'center',
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  cell: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#000',
+  },
 });
 
 //STACKS
@@ -463,8 +645,72 @@ function GameStack() {
       <GameScreens.Screen name="Login" component={Login} />
       <GameScreens.Screen name="Declarer" component={Decl} />
       <GameScreens.Screen name="Identify" component={Ident} />
+      <GameScreens.Screen name="Confirm" component={Confirm} />
     </GameScreens.Navigator>
   );
+}
+
+function Leaderboard() {
+  const [data, setData] = React.useState([]);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const fetchData = () => {
+    fetch("http://172.20.10.4:3000/playerdata")
+      .then(res => res.json())
+      .then((yeet) => {
+        setData(yeet);
+        setRefreshing(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
+
+  return (
+    <SafeAreaView>
+    <ScrollView
+      contentContainerStyle={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      <Text>Leaderboard</Text>
+      {data.map((item, index) => (
+        <View key={index} style={styles.row}>
+          <Text style={styles.cell}>{item[0]}</Text>
+          <Text style={styles.cell}>{item[1]}</Text>
+          <Text style={styles.cell}>{item[2]}</Text>
+          <Text style={styles.cell}>{item[3]}</Text>
+        </View>
+      ))}
+    </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function Bidding({ navigation }) {
+  return (
+    <WebView
+      source={bidHTML}
+      style={{ marginTop: 30 }}
+    />
+  );
+}
+
+function Boards(){
+  return(
+    <LeaderScreens.Navigator initialRouteName="Leaderboard" screenOptions={{
+      headerShown: false,
+    }}>
+      <LeaderScreens.Screen name="Leaderboard" component={Leaderboard} />
+    </LeaderScreens.Navigator>
+  )
 }
 
 function MainStack() {
@@ -474,7 +720,7 @@ function MainStack() {
         tabBarStyle: { position: 'absolute' },
         headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName = 'ios-list'
+          let iconName = 'key'
           // You can return any component that you like here!
           return <Ionicons name={iconName} size={size} color={color} />;
         },
@@ -482,6 +728,8 @@ function MainStack() {
         tabBarInactiveTintColor: 'gray',
       }}>
         <Tab.Screen name="Game" component={GameStack} />
+        <Tab.Screen name="Leaderboard" component={Boards} />
+        <Tab.Screen name="Bid" component={Bidding} />
       </Tab.Navigator>
     </NavigationContainer>
   )

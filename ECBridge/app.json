@@ -2,7 +2,7 @@
   "expo": {
     "name": "ECBridge",
     "slug": "ECBridge",
-    "version": "0.3.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -10,10 +10,6 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0,
-      "url": "https://u.expo.dev/5ee586be-da18-49d7-9684-fc4d452c999b"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -25,9 +21,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
-      "package": "com.carbon1769.ECBridge"
+        "backgroundColor": "#ffffff"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -36,9 +31,6 @@
       "eas": {
         "projectId": "5ee586be-da18-49d7-9684-fc4d452c999b"
       }
-    },
-    "runtimeVersion": {
-      "policy": "sdkVersion"
     }
   }
 }
